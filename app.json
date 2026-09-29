@@ -1,0 +1,29 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/run/run",
+    "pages/rank/rank",
+    "pages/challenges/challenges",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "navigationBarTitleText": "校园燃动",
+    "navigationBarBackgroundColor": "#f7f8f4",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f7f8f4"
+  },
+  "tabBar": {
+    "color": "#99a09a",
+    "selectedColor": "#1f2a24",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页" },
+      { "pagePath": "pages/rank/rank", "text": "榜单" },
+      { "pagePath": "pages/challenges/challenges", "text": "活动" },
+      { "pagePath": "pages/profile/profile", "text": "我的" }
+    ]
+  },
+  "permission": { "scope.userLocation": { "desc": "用于记录跑步路径与运动距离" } },
+  "sitemapLocation": "sitemap.json"
+}

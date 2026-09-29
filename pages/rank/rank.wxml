@@ -1,0 +1,36 @@
+<view class="container">
+  <view class="eyebrow">CAMPUS RANKING</view>
+  <view class="title">一起跑，才更远</view>
+  <view class="muted">每一次运动，都会成为校园里的一点星光。</view>
+
+  <view class="tabs">
+    <view class="tab {{isWeek?'active':''}}" data-tab="0" bindtap="switchTab">本周榜</view>
+    <view class="tab {{isWeek?'':'active'}}" data-tab="1" bindtap="switchTab">月度榜</view>
+  </view>
+
+  <view class="podium card">
+    <block wx:for="{{podium}}" wx:key="name">
+      <view class="pod {{item.first?'first':''}}">
+        <text wx:if="{{item.first}}" class="crown">✦</text>
+        <text class="pod-avatar {{item.first?'gold':''}}">{{item.avatar}}</text>
+        <text>{{item.name}}</text>
+        <text class="pod-km">{{item.km}} km</text>
+      </view>
+    </block>
+  </view>
+
+  <view class="section-title">完整榜单</view>
+  <view class="card list">
+    <block wx:for="{{list}}" wx:key="rank">
+      <view class="rank-row {{item.me?'me':''}}">
+        <text class="rank-no">{{item.rank}}</text>
+        <text class="list-avatar">{{item.avatar}}</text>
+        <view class="rank-info">
+          <text>{{item.name}} {{item.me?'· 我':''}}</text>
+          <text class="muted small">{{item.school}}</text>
+        </view>
+        <text class="km">{{item.km}} <text>km</text></text>
+      </view>
+    </block>
+  </view>
+</view>

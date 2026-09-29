@@ -1,0 +1,38 @@
+# 微信开发者工具本地私有配置
+project.private.config.json
+
+# 系统和编辑器文件
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# JavaScript / Node 临时目录（当前项目不依赖 Node，但防止后续污染）
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 构建、缓存和临时输出
+.cache/
+dist/
+build/
+coverage/
+tmp/
+work/
+
+# 环境变量和密钥
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# 真实用户数据、日志和轨迹导出
+*.log
+*.jsonl
+exports/
+recordings/
+tracks/
