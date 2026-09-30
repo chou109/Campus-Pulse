@@ -1,0 +1,14 @@
+<view class="container records-page">
+  <view class="eyebrow">ACTIVITY LOG</view>
+  <view class="row between"><view><view class="title">运动记录</view><view class="muted">只保存在当前设备的研究展示数据</view></view><button class="reset-btn" bindtap="resetDemo">重置演示</button></view>
+  <view wx:if="{{hasRecords}}" class="record-list">
+    <block wx:for="{{records}}" wx:key="id">
+      <view class="record-card card" data-id="{{item.id}}" bindtap="viewDetail">
+        <view class="row between"><view><text class="record-date">{{item.dateText}}</text><text class="record-source">{{item.sourceText}}</text></view><text class="record-distance">{{item.distance}} <text>km</text></text></view>
+        <view class="row record-meta"><text>{{item.durationText}}</text><text>配速 {{item.pace}} /km</text><text>{{item.calories}} kcal</text></view>
+        <button class="record-delete" data-id="{{item.id}}" catchtap="remove">删除</button>
+      </view>
+    </block>
+  </view>
+  <view wx:else class="card empty-records"><text class="empty-icon">○</text><text>还没有运动记录</text><text class="muted small">完成一次演示运动后，记录会出现在这里</text></view>
+</view>

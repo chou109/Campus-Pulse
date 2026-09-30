@@ -26,11 +26,13 @@ Page({
     weeklyDistance: '0.0',
     remainingDistance: '10.0',
     weekProgress: 0,
-    streak: 6,
+    streak: 0,
     bars: [0, 0, 0, 0, 0, 0, 0],
     days: ['一', '二', '三', '四', '五', '六', '日'],
     feed: [],
-    hasRecords: false
+    hasRecords: false,
+    showOnboarding: false,
+    shareCheckIn: true
   },
 
   onShow() {
@@ -40,6 +42,7 @@ Page({
     const weekRecords = currentWeekRecords.length ? currentWeekRecords : records.slice(0, 2)
     const week = weekRecords.reduce((sum, item) => sum + Number(item.distance || 0), 0)
     const bars = this.buildBars(records)
+    const feed = records.slice(0, 3).map(item => Object.assign({}, item, { visibilityText: app.globalData.settings.shareCheckIn ? '可分享' : '仅自己可见' }))
     const progress = Math.min(100, Math.round((week / 10) * 100))
 
     this.setData({
@@ -48,8 +51,11 @@ Page({
       remainingDistance: formatDistance(Math.max(0, 10 - week)),
       weekProgress: progress,
       bars,
-      feed: records.slice(0, 3),
-      hasRecords: records.length > 0
+      feed,
+      streak: app.globalData.streak || 0,
+      hasRecords: records.length > 0,
+      showOnboarding: !app.globalData.onboardingSeen,
+      shareCheckIn: app.globalData.settings.shareCheckIn
     })
   },
 
@@ -62,5 +68,10 @@ Page({
 
   startRun() { wx.navigateTo({ url: '/pages/run/run' }) },
   openRank() { wx.switchTab({ url: '/pages/rank/rank' }) },
-  openChallenges() { wx.switchTab({ url: '/pages/challenges/challenges' }) }
+  openChallenges() { wx.switchTab({ url: '/pages/challenges/challenges' }) },
+  openRecords() { wx.navigateTo({ url: '/pages/records/records' }) },
+  closeOnboarding() {
+    app.markOnboardingSeen()
+    this.setData({ showOnboarding: false })
+  }
 })

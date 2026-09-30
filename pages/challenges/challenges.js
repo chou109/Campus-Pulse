@@ -20,6 +20,10 @@ Page({
     this.setData({ challenges: decorateChallenges(app.globalData.challenges) })
   },
 
+  viewFeatured() {
+    wx.showModal({ title: '秋日校园环线', content: '在活动期间完成校园环线打卡即可累计进度。当前版本为研究展示活动，不产生真实奖励。', showCancel: false })
+  },
+
   join(event) {
     const id = event.currentTarget.dataset.id
     const challenges = this.data.challenges.map(item => item.id === id

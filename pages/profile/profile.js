@@ -1,7 +1,7 @@
 const app = getApp()
 
 Page({
-  data: { user: app.globalData.user, medals: [], settings: {}, total: '0.0', count: 0, unlockedCount: 0 },
+  data: { user: app.globalData.user, medals: [], settings: {}, total: '0.0', count: 0, streak: 0, unlockedCount: 0 },
 
   onShow() {
     const total = app.globalData.records.reduce((sum, item) => sum + Number(item.distance || 0), 0)
@@ -9,6 +9,7 @@ Page({
     this.setData({
       total: total.toFixed(1),
       count: app.globalData.records.length,
+      streak: app.globalData.streak || 0,
       medals,
       unlockedCount: medals.filter(item => item.unlocked).length,
       settings: app.globalData.settings
@@ -22,6 +23,8 @@ Page({
     this.setData({ settings: app.globalData.settings })
     wx.showToast({ title: '设置已保存', icon: 'none' })
   },
+
+  openRecords() { wx.navigateTo({ url: '/pages/records/records' }) },
 
   clearRecords() {
     if (!app.globalData.records.length) {

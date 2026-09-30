@@ -4,6 +4,7 @@ const MAX_POINT_ACCURACY_METERS = 80
 const MAX_POINT_JUMP_KM = 0.3
 
 function toRad(value) { return value * Math.PI / 180 }
+function formatDate(date) { return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}` }
 
 function distanceBetween(a, b) {
   const dLat = toRad(b.latitude - a.latitude)
@@ -153,7 +154,7 @@ Page({
 
   saveRecord() {
     const record = {
-      date: '09/29',
+      date: formatDate(new Date()),
       createdAt: new Date().toISOString(),
       distance: Number(this.data.distance) || 0,
       duration: Math.max(1, Math.round(this.data.seconds / 60)),

@@ -2,6 +2,7 @@
   "pages": [
     "pages/index/index",
     "pages/run/run",
+    "pages/records/records",
     "pages/rank/rank",
     "pages/challenges/challenges",
     "pages/profile/profile"

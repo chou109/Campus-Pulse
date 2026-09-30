@@ -1,4 +1,5 @@
 <view class="container">
+  <view wx:if="{{showOnboarding}}" class="onboarding-mask"><view class="onboarding-card"><text class="onboarding-kicker">WELCOME TO CAMPUS PULSE</text><text class="onboarding-title">让每一步都有回应</text><text class="onboarding-copy">先用演示模式体验记录、榜单、挑战和勋章。真实定位只在你主动授权后启用。</text><button class="primary-btn" bindtap="closeOnboarding">开始探索</button></view></view>
   <view class="row between">
     <view><view class="eyebrow">CAMPUS / MOVE</view><view class="title">嗨，{{user.name}}<text style="color:#e36b3d">。</text></view><view class="muted">今天也为自己积攒一点能量</view></view>
     <view class="avatar">{{user.avatarText}}</view>
@@ -14,7 +15,7 @@
   </view>
   <view class="row between section-title"><text>本周趋势</text><text class="muted small">{{totalDistance}} km 累计</text></view>
   <view class="chart card"><view class="bars"><block wx:for="{{bars}}" wx:key="index"><view class="bar-col"><view class="bar" style="height:{{item}}%"></view><text>{{days[index]}}</text></view></block></view></view>
-  <view class="row between section-title"><text>最近动态</text><text class="muted small" bindtap="openRank">查看榜单 ›</text></view>
-  <view class="card activity" wx:if="{{hasRecords}}"><block wx:for="{{feed}}" wx:key="date"><view class="row activity-row"><view class="activity-dot">跑</view><view class="activity-main"><text>完成一次跑步</text><text class="muted small">{{item.date}} · {{item.distance}} km · {{item.pace}} /km</text></view><text class="pill">+{{item.calories}} kcal</text></view></block></view>
+  <view class="row between section-title"><text>最近动态</text><text class="muted small" bindtap="openRecords">查看全部 ›</text></view>
+  <view class="card activity" wx:if="{{hasRecords}}"><block wx:for="{{feed}}" wx:key="date"><view class="row activity-row"><view class="activity-dot">跑</view><view class="activity-main"><text>完成一次跑步</text><text class="muted small">{{item.date}} · {{item.distance}} km · {{item.pace}} /km · {{item.visibilityText}}</text></view><text class="pill">+{{item.calories}} kcal</text></view></block></view>
   <view class="card empty" wx:else>还没有运动记录，去完成第一次打卡吧。</view>
 </view>
