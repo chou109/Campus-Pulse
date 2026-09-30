@@ -1,8 +1,8 @@
 <view class="container run-page">
   <view class="row between"><view><view class="eyebrow">RUN SESSION</view><view class="title">把今天跑成一条线</view></view><switch checked="{{demoMode}}" bindchange="toggleMode" color="#e36b3d" /></view>
   <view class="mode-hint muted">{{demoMode ? '演示模式：无需定位即可预览完整流程' : '真实定位：仅在前台记录当前位置'}}</view>
-  <view class="map-card"><map id="run-map" latitude="{{latitude}}" longitude="{{longitude}}" scale="16" markers="{{markers}}" polyline="{{polyline}}" show-location></map></view>
+  <view class="map-card"><map id="run-map" latitude="{{latitude}}" longitude="{{longitude}}" scale="16" markers="{{markers}}" polyline="{{polyline}}"></map></view>
   <view class="run-metrics card"><view class="main-metric"><text class="metric">{{distance}}</text><text class="metric-unit">km</text></view><view class="row metric-grid"><view><text class="metric small-metric">{{formatTime(seconds)}}</text><text class="metric-label">运动时长</text></view><view><text class="metric small-metric">{{pace}}</text><text class="metric-label">平均配速</text></view><view><text class="metric small-metric">{{calories}}</text><text class="metric-label">千卡</text></view></view></view>
-  <view class="run-actions"><button class="primary-btn" bindtap="start">{{!running ? '开始记录' : (paused ? '继续运动' : '记录中…')}}</button><button wx:if="{{running}}" class="secondary-btn" bindtap="pause">{{paused ? '继续' : '暂停'}}</button><button wx:if="{{running}}" class="finish-btn" bindtap="finish" disabled="{{!canFinish}}">结束并打卡</button></view>
+  <view class="run-actions"><button class="primary-btn" bindtap="start" disabled="{{running}}">{{!running ? '开始记录' : (paused ? '已暂停' : '运动记录中')}}</button><button wx:if="{{running}}" class="secondary-btn" bindtap="pause">{{paused ? '继续' : '暂停'}}</button><button wx:if="{{running}}" class="finish-btn" bindtap="finish" disabled="{{!canFinish || finishing}}">{{finishing ? '正在确认…' : '结束并打卡'}}</button></view>
   <view class="safety-note card"><text class="note-icon">i</text><view><text>状态：{{locationStatus}}</text><text class="safety-copy">请在安全、开放的场地运动。演示模式不会采集真实位置；切换真实定位前请确认已授权。</text></view></view>
 </view>

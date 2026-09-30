@@ -1,2 +1,8 @@
 .profile-head { display:flex;align-items:center;gap:24rpx;margin:20rpx 0 34rpx; }.big-avatar { width:112rpx;height:112rpx;font-size:44rpx; }.stats { display:flex;justify-content:space-between;text-align:center;padding:30rpx 18rpx; }.stats > view { flex:1; }.stats .metric { font-size:42rpx;display:block; }.medals { display:grid;grid-template-columns:1fr 1fr;gap:24rpx; }.medal { display:flex;flex-direction:column;align-items:center;gap:8rpx;color:#bac0b9;font-size:23rpx;text-align:center; }.medal-icon { width:86rpx;height:86rpx;border-radius:50%;background:#eff1ed;display:flex;align-items:center;justify-content:center;font-size:36rpx;filter:grayscale(1); }.medal.unlocked { color:#28362c; }.medal.unlocked .medal-icon { background:#f7e6d7;filter:none; }.tiny { font-size:19rpx; }.preferences { padding:8rpx 26rpx; }.preferences > view { padding:24rpx 0;border-bottom:1rpx solid #edf0eb;font-size:24rpx; }.preferences > view:last-child { border-bottom:0; }.privacy { font-size:21rpx;line-height:1.7;text-align:center;margin:34rpx 20rpx; }
 .delete-btn { margin-top:34rpx; border:0; background:#fff0eb; color:#c85f3c; border-radius:16rpx; font-size:24rpx; }
+
+.goal-options { display:flex; gap:14rpx; padding:18rpx; }.goal-option { flex:1; text-align:center; padding:18rpx 4rpx; border-radius:16rpx; background:#f1f3ef; color:#879188; font-size:28rpx; font-weight:800; }.goal-option.selected { background:#1f2a24; color:#fff; }.goal-unit { display:block; font-size:18rpx; font-weight:400; margin-top:2rpx; opacity:.75; }
+
+.guide-btn { margin-top:28rpx; border:0; background:#edf0eb; color:#5f7162; border-radius:16rpx; font-size:24rpx; }
+
+.preference-note { font-size:19rpx; line-height:1.5; padding:0 0 18rpx; }

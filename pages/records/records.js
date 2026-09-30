@@ -13,18 +13,13 @@ Page({
   data: { records: [], hasRecords: false },
 
   onShow() {
-    const records = (app.globalData.records || []).map(formatRecord)
+    const records = (app.globalData.records || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(formatRecord)
     this.setData({ records, hasRecords: records.length > 0 })
   },
 
   viewDetail(event) {
     const record = this.data.records.find(item => item.id === event.currentTarget.dataset.id)
-    if (!record) return
-    wx.showModal({
-      title: '运动记录详情',
-      content: `${record.dateText}\n${record.distance.toFixed(2)} km · ${record.durationText}\n平均配速 ${record.pace} · ${record.calories} kcal\n来源：${record.sourceText}`,
-      showCancel: false
-    })
+    if (record) wx.navigateTo({ url: `/pages/record-detail/record-detail?id=${record.id}` })
   },
 
   remove(event) {

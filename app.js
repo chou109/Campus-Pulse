@@ -1,3 +1,6 @@
+const stats = require('./utils/statistics')
+const challengeRules = require('./utils/challenge-rules')
+
 const STORAGE_KEYS = {
   records: 'campus-fit-records',
   challenges: 'campus-fit-challenges',
@@ -13,9 +16,9 @@ const DEFAULT_SETTINGS = {
 }
 
 const DEFAULT_CHALLENGES = [
-  { id: 1, title: '七日晨跑计划', subtitle: '连续 7 天完成 2 km', progress: 0, joined: true, tone: 'orange', reward: '早起鸟勋章', ruleType: 'streak', target: 7 },
-  { id: 2, title: '校园环线挑战', subtitle: '本月累计跑满 30 km', progress: 0, joined: true, tone: 'blue', reward: '校园探索家', ruleType: 'monthlyDistance', target: 30 },
-  { id: 3, title: '社团接力赛', subtitle: '和队友一起冲进周榜前十', progress: 0.36, joined: false, tone: 'purple', reward: '团队能量值', ruleType: 'static', target: 1 }
+  { id: 1, title: '七日晨跑计划', subtitle: '连续 7 天完成 2 km', progress: 0, joined: true, tone: 'orange', reward: '早起鸟勋章', ruleType: 'streak', target: 7, dailyTargetKm: 2, participants: 86, durationText: '连续 7 天' },
+  { id: 2, title: '校园环线挑战', subtitle: '本月累计跑满 30 km', progress: 0, joined: true, tone: 'blue', reward: '校园探索家', ruleType: 'monthlyDistance', target: 30, participants: 128, durationText: '本月有效' },
+  { id: 3, title: '社团接力赛', subtitle: '和队友一起冲进周榜前十', progress: 0.36, joined: false, tone: 'purple', reward: '团队能量值', ruleType: 'static', target: 1, participants: 42, durationText: '演示活动' }
 ]
 
 function pad(value) { return String(value).padStart(2, '0') }
@@ -41,48 +44,27 @@ function makeDefaultRecords() {
 }
 
 function normalizeRecord(record, index) {
-  const createdAt = record.createdAt || new Date().toISOString()
+  const parsedDate = new Date(record && record.createdAt)
+  const createdAt = record && record.createdAt && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toISOString() : new Date().toISOString()
+  const distance = Number(record && record.distance)
+  const duration = Number(record && record.duration)
+  const calories = Number(record && record.calories)
+  const points = Array.isArray(record && record.points) ? record.points.filter(point => {
+    const latitude = Number(point && point.latitude)
+    const longitude = Number(point && point.longitude)
+    return Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180
+  }).map(point => ({ latitude: Number(point.latitude), longitude: Number(point.longitude) })) : []
   return Object.assign({}, record, {
-    id: record.id || `record-${createdAt}-${index}`,
-    date: record.date || formatDate(new Date(createdAt)),
+    id: record && record.id ? String(record.id) : `record-${createdAt}-${index}`,
+    date: record && record.date ? String(record.date) : formatDate(new Date(createdAt)),
     createdAt,
-    distance: Number(record.distance || 0),
-    duration: Number(record.duration || 0),
-    calories: Number(record.calories || 0),
-    points: Array.isArray(record.points) ? record.points : []
+    distance: Number.isFinite(distance) && distance >= 0 ? distance : 0,
+    duration: Number.isFinite(duration) && duration >= 0 ? duration : 0,
+    calories: Number.isFinite(calories) && calories >= 0 ? calories : 0,
+    points
   })
 }
 
-function distinctDateKeys(records) {
-  return Array.from(new Set(records.map(item => new Date(item.createdAt).toDateString())))
-    .map(value => new Date(value).getTime())
-    .sort((a, b) => b - a)
-}
-
-function calculateStreak(records) {
-  const dates = distinctDateKeys(records)
-  if (!dates.length) return 0
-  let streak = 1
-  for (let index = 1; index < dates.length; index += 1) {
-    const diff = Math.round((dates[index - 1] - dates[index]) / 86400000)
-    if (diff !== 1) break
-    streak += 1
-  }
-  return streak
-}
-
-function calculateChallengeProgress(challenge, records) {
-  if (challenge.ruleType === 'streak') return Math.min(1, calculateStreak(records) / challenge.target)
-  if (challenge.ruleType === 'monthlyDistance') {
-    const now = new Date()
-    const total = records.filter(item => {
-      const date = new Date(item.createdAt)
-      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
-    }).reduce((sum, item) => sum + item.distance, 0)
-    return Math.min(1, total / challenge.target)
-  }
-  return Number(challenge.progress || 0)
-}
 
 const app = {
   globalData: {
@@ -139,6 +121,11 @@ const app = {
     wx.setStorageSync(STORAGE_KEYS.onboarding, true)
   },
 
+  resetOnboarding() {
+    this.globalData.onboardingSeen = false
+    wx.removeStorageSync(STORAGE_KEYS.onboarding)
+  },
+
   clearRecords() {
     this.globalData.records = []
     wx.setStorageSync(STORAGE_KEYS.records, [])
@@ -157,9 +144,9 @@ const app = {
 
   refreshDerivedState() {
     const records = this.globalData.records
-    const totalDistance = records.reduce((sum, item) => sum + Number(item.distance || 0), 0)
-    const streak = calculateStreak(records)
-    const challenges = this.globalData.challenges.map(item => Object.assign({}, item, { progress: calculateChallengeProgress(item, records) }))
+    const totalDistance = stats.sumDistance(records)
+    const streak = stats.calculateStreak(records)
+    const challenges = this.globalData.challenges.map(item => challengeRules.decorate(item, records))
     this.globalData.challenges = challenges
     this.globalData.streak = streak
     this.globalData.medals = [

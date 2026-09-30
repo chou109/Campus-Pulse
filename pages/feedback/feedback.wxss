@@ -1,0 +1,1 @@
+.feedback-page { padding-top:28rpx; }.feedback-card { margin:28rpx 0 18rpx; }.feedback-card textarea { width:100%; min-height:340rpx; line-height:1.6; font-size:25rpx; }.clear-draft { margin-top:12rpx; background:transparent; color:#8d968f; font-size:22rpx; }

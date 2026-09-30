@@ -1,0 +1,15 @@
+<view class="container challenge-detail-page">
+  <view wx:if="{{hasChallenge}}">
+    <view class="eyebrow">CHALLENGE DETAIL</view>
+    <view class="detail-banner {{challenge.tone}}"><text class="detail-symbol">✦</text><text class="detail-badge">{{challenge.reward}}</text></view>
+    <view class="title">{{challenge.title}}</view>
+    <view class="muted">{{challenge.subtitle}}</view>
+    <view class="detail-stats card"><view><text class="detail-stat">{{challenge.participants}}</text><text class="metric-label">同学参与</text></view><view><text class="detail-stat">{{challenge.target}} km</text><text class="metric-label">目标里程</text></view><view><text class="detail-stat">{{challenge.durationText}}</text><text class="metric-label">活动周期</text></view></view>
+    <view class="section-title">挑战进度</view>
+    <view class="card progress-card"><view class="row between"><text>本机记录进度</text><text class="progress-number">{{progressText}}</text></view><view class="progress"><view class="progress-fill" style="width:{{progressWidth}}"></view></view><text class="muted small">进度根据本机运动记录计算；清除本地数据会重置。</text></view>
+    <view class="section-title">参与规则</view>
+    <view class="card rules"><text wx:if="{{challenge.ruleType==='streak'}}">连续 7 天每天至少完成 2 km 运动。</text><text wx:elif="{{challenge.ruleType==='monthlyDistance'}}">在本月内累计完成目标里程，运动记录按日期统计。</text><text wx:elif="{{challenge.ruleType==='weeklyDistance'}}">在本周内累计完成目标里程。</text><text wx:else>与队友一起完成活动目标。当前为交互演示活动，不会核验真实团队名次。</text><text class="muted small">当前项目为本地研究原型，参与人数和奖励仅用于界面演示，不产生真实奖励。</text></view>
+    <view class="detail-actions"><button wx:if="{{!challenge.joined && challenge.id!=='featured'}}" class="primary-btn" bindtap="join">加入挑战</button><button wx:elif="{{challenge.joined && challenge.id!=='featured'}}" class="primary-btn" bindtap="leave">退出挑战</button><button wx:else class="primary-btn" disabled>演示活动</button><button class="share-detail" open-type="share">邀请同学</button></view>
+  </view>
+  <view wx:else class="card empty-records"><text class="empty-icon">○</text><text>挑战不存在或已移除</text></view>
+</view>

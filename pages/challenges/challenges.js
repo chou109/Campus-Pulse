@@ -1,4 +1,5 @@
 const app = getApp()
+const challengeRules = require('../../utils/challenge-rules')
 
 function decorateChallenge(item) {
   const progress = Math.max(0, Math.min(1, Number(item.progress || 0)))
@@ -14,14 +15,28 @@ function decorateChallenges(challenges) {
 }
 
 Page({
-  data: { challenges: [] },
+  data: { challenges: [], recommendation: null },
 
   onShow() {
-    this.setData({ challenges: decorateChallenges(app.globalData.challenges) })
+    const challenges = decorateChallenges(app.globalData.challenges)
+    const recommendation = challengeRules.recommend(app.globalData.challenges, app.globalData.records, app.globalData.streak)
+    this.setData({ challenges, recommendation })
+  },
+
+  onShareAppMessage() {
+    return { title: '来参加校园燃动挑战', path: '/pages/challenges/challenges' }
   },
 
   viewFeatured() {
-    wx.showModal({ title: '秋日校园环线', content: '在活动期间完成校园环线打卡即可累计进度。当前版本为研究展示活动，不产生真实奖励。', showCancel: false })
+    wx.navigateTo({ url: '/pages/challenge-detail/challenge-detail?id=featured' })
+  },
+
+  openChallenge(event) {
+    wx.navigateTo({ url: `/pages/challenge-detail/challenge-detail?id=${event.currentTarget.dataset.id}` })
+  },
+
+  openRecommended(event) {
+    wx.navigateTo({ url: `/pages/challenge-detail/challenge-detail?id=${event.currentTarget.dataset.id}` })
   },
 
   join(event) {

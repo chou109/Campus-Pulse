@@ -1,0 +1,8 @@
+<view class="container feedback-page">
+  <view class="eyebrow">PROJECT FEEDBACK</view>
+  <view class="title">告诉我们你的想法</view>
+  <view class="muted">反馈草稿只保存在当前设备，不会自动上传。</view>
+  <view class="feedback-card card"><textarea maxlength="500" value="{{content}}" bindinput="onInput" placeholder="可以写下使用感受、问题或建议…"/><view class="row between"><text class="muted small">{{count}} / 500</text><text class="muted small">本地草稿</text></view></view>
+  <button class="primary-btn" bindtap="copyDraft">复制反馈内容</button>
+  <button class="clear-draft" bindtap="clearDraft">清空草稿</button>
+</view>

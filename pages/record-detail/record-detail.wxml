@@ -1,0 +1,13 @@
+<view class="container detail-page">
+  <view wx:if="{{hasRecord}}">
+    <view class="eyebrow">WORKOUT DETAIL</view>
+    <view class="title">一次运动，值得被看见</view>
+    <view class="muted">{{record.dateText}} · {{record.sourceText}}</view>
+    <view class="detail-hero card"><text class="detail-distance">{{record.distance}} <text>km</text></text><view class="row detail-metrics"><view><text class="metric">{{record.duration}}</text><text class="metric-label">分钟</text></view><view><text class="metric">{{record.pace}}</text><text class="metric-label">平均配速</text></view><view><text class="metric">{{record.calories}}</text><text class="metric-label">千卡</text></view></view></view>
+    <view class="share-preview card"><text class="preview-brand">CAMPUS PULSE · 校园燃动</text><text class="preview-distance">{{record.distance}} km</text><text class="preview-caption">{{record.duration}} 分钟 · 配速 {{record.pace}} /km</text><text class="preview-privacy">{{shareEnabled ? '分享前请确认文案不包含敏感信息' : '打卡分享已关闭，仅保存在本机'}}</text></view>
+    <view wx:if="{{hasRoute}}" class="detail-map card"><map latitude="{{latitude}}" longitude="{{longitude}}" scale="16" markers="{{markers}}" polyline="{{polyline}}"></map></view>
+    <view wx:else class="route-empty card"><text class="empty-icon">⌁</text><text>这条记录没有完整轨迹</text><text class="muted small">演示记录只用于展示运动统计</text></view>
+    <view class="detail-actions"><button wx:if="{{shareEnabled}}" class="primary-btn" bindtap="copyCheckIn">复制打卡文案</button><button wx:else class="primary-btn disabled-share" disabled>打卡分享已关闭</button><button wx:if="{{shareEnabled}}" class="share-detail" open-type="share">分享小程序</button><button wx:else class="share-detail disabled-share" disabled>已关闭打卡分享</button><button class="delete-detail" bindtap="removeRecord">删除这条记录</button></view>
+  </view>
+  <view wx:else class="card empty-records"><text class="empty-icon">○</text><text>找不到这条运动记录</text></view>
+</view>

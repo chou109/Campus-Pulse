@@ -3,9 +3,12 @@
     "pages/index/index",
     "pages/run/run",
     "pages/records/records",
+    "pages/record-detail/record-detail",
+    "pages/challenge-detail/challenge-detail",
     "pages/rank/rank",
     "pages/challenges/challenges",
-    "pages/profile/profile"
+    "pages/profile/profile",
+    "pages/feedback/feedback"
   ],
   "window": {
     "navigationBarTitleText": "校园燃动",
