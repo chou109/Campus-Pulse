@@ -1,25 +1,22 @@
 const stats = require('./utils/statistics')
 const challengeRules = require('./utils/challenge-rules')
+const defaultChallenges = require('./utils/default-challenges')
 
 const STORAGE_KEYS = {
   records: 'campus-fit-records',
   challenges: 'campus-fit-challenges',
   settings: 'campus-fit-settings',
-  onboarding: 'campus-fit-onboarding-seen'
+  onboarding: 'campus-fit-onboarding-seen',
+  announcements: 'campus-fit-announcements'
 }
 
 const DEFAULT_SETTINGS = {
   publicRank: true,
   shareCheckIn: true,
   reminders: false,
-  weeklyGoalKm: 10
+  weeklyGoalKm: 10,
+  useLocalAdminBackend: false
 }
-
-const DEFAULT_CHALLENGES = [
-  { id: 1, title: '七日晨跑计划', subtitle: '连续 7 天完成 2 km', progress: 0, joined: true, tone: 'orange', reward: '早起鸟勋章', ruleType: 'streak', target: 7, dailyTargetKm: 2, participants: 86, durationText: '连续 7 天' },
-  { id: 2, title: '校园环线挑战', subtitle: '本月累计跑满 30 km', progress: 0, joined: true, tone: 'blue', reward: '校园探索家', ruleType: 'monthlyDistance', target: 30, participants: 128, durationText: '本月有效' },
-  { id: 3, title: '社团接力赛', subtitle: '和队友一起冲进周榜前十', progress: 0.36, joined: false, tone: 'purple', reward: '团队能量值', ruleType: 'static', target: 1, participants: 42, durationText: '演示活动' }
-]
 
 function pad(value) { return String(value).padStart(2, '0') }
 
@@ -72,6 +69,7 @@ const app = {
     user: { name: '林同学', avatarText: '林' },
     records: [],
     challenges: [],
+    announcements: [],
     medals: [],
     streak: 0,
     settings: DEFAULT_SETTINGS,
@@ -82,14 +80,46 @@ const app = {
     const savedRecords = wx.getStorageSync(STORAGE_KEYS.records)
     const savedChallenges = wx.getStorageSync(STORAGE_KEYS.challenges)
     const savedSettings = wx.getStorageSync(STORAGE_KEYS.settings)
+    const savedAnnouncements = wx.getStorageSync(STORAGE_KEYS.announcements)
     const savedOnboarding = wx.getStorageSync(STORAGE_KEYS.onboarding)
 
     const records = Array.isArray(savedRecords) ? savedRecords : makeDefaultRecords()
     this.globalData.records = records.map(normalizeRecord)
-    this.globalData.challenges = Array.isArray(savedChallenges) ? savedChallenges : DEFAULT_CHALLENGES
+    this.globalData.challenges = Array.isArray(savedChallenges) ? savedChallenges : defaultChallenges.getDefaultChallenges()
+    this.globalData.announcements = Array.isArray(savedAnnouncements) ? savedAnnouncements : []
     this.globalData.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings || {})
     this.globalData.onboardingSeen = Boolean(savedOnboarding)
     this.refreshDerivedState()
+  },
+
+  fetchPublicAdminConfig(callback) {
+    if (!this.globalData.settings.useLocalAdminBackend || typeof wx.request !== 'function') {
+      if (callback) callback(false)
+      return
+    }
+    wx.request({
+      url: 'http://127.0.0.1:8790/api/public/config',
+      method: 'GET',
+      timeout: 2500,
+      success: response => {
+        const payload = response && response.statusCode === 200 && response.data
+        if (!payload || !Array.isArray(payload.challenges) || !Array.isArray(payload.announcements)) {
+          if (callback) callback(false)
+          return
+        }
+        const previous = new Map(this.globalData.challenges.map(item => [String(item.id), item]))
+        this.globalData.challenges = payload.challenges.map(item => {
+          const local = previous.get(String(item.id)) || {}
+          return Object.assign({}, item, { joined: Boolean(local.joined), progress: Number(local.progress || item.progress || 0) })
+        })
+        this.globalData.announcements = payload.announcements
+        wx.setStorageSync(STORAGE_KEYS.challenges, this.globalData.challenges)
+        wx.setStorageSync(STORAGE_KEYS.announcements, this.globalData.announcements)
+        this.refreshDerivedState()
+        if (callback) callback(true)
+      },
+      fail: () => { if (callback) callback(false) }
+    })
   },
 
   addRecord(record) {
@@ -134,7 +164,7 @@ const app = {
 
   resetDemoData() {
     this.globalData.records = makeDefaultRecords().map(normalizeRecord)
-    this.globalData.challenges = DEFAULT_CHALLENGES.map(item => Object.assign({}, item))
+    this.globalData.challenges = defaultChallenges.getDefaultChallenges()
     this.globalData.settings = Object.assign({}, DEFAULT_SETTINGS)
     wx.setStorageSync(STORAGE_KEYS.records, this.globalData.records)
     wx.setStorageSync(STORAGE_KEYS.challenges, this.globalData.challenges)

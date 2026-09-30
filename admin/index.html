@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>校园燃动 · 本机运营后台</title>
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark">CP</div>
+    <div class="brand-copy"><strong>Campus Pulse</strong><span>校园燃动运营台</span></div>
+    <div class="local-badge"><i></i>仅本机 · 开发演示</div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <p class="nav-caption">工作台</p>
+      <button class="nav-item active" data-view="overview"><span>⌂</span>运营概览</button>
+      <button class="nav-item" data-view="challenges"><span>✦</span>挑战管理</button>
+      <button class="nav-item" data-view="announcements"><span>▤</span>公告管理</button>
+      <button class="nav-item" data-view="audit"><span>◷</span>操作记录</button>
+      <div class="sidebar-foot"><strong>本机 JSON 配置库</strong><span>用户运动记录与轨迹不会进入此后台。</span></div>
+    </aside>
+    <main class="main-content">
+      <section class="view active" id="view-overview">
+        <div class="page-heading"><div><p class="eyebrow">LOCAL OPERATIONS</p><h1>运营概览</h1><p class="subtitle">管理小程序中的挑战和公告。配置保存在这台电脑上。</p></div><button class="button button-quiet" id="refresh-all">刷新数据</button></div>
+        <div class="warning-banner"><span>!</span><div><strong>本机演示后台</strong><p>服务只监听 127.0.0.1，没有管理员账号，不要暴露到局域网或公网。当前不展示云端用户数据。</p></div></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span class="stat-icon orange">✦</span><span class="stat-label">挑战总数</span><strong id="stat-challenges">—</strong><small>本地配置</small></article>
+          <article class="stat-card"><span class="stat-icon green">✓</span><span class="stat-label">已发布挑战</span><strong id="stat-published-challenges">—</strong><small>小程序可读取</small></article>
+          <article class="stat-card"><span class="stat-icon blue">▤</span><span class="stat-label">公告总数</span><strong id="stat-announcements">—</strong><small>本地配置</small></article>
+          <article class="stat-card"><span class="stat-icon purple">◷</span><span class="stat-label">操作记录</span><strong id="stat-audit">—</strong><small>不含用户身份</small></article>
+        </div>
+        <div class="two-column">
+          <article class="panel"><div class="panel-heading"><div><h2>快速操作</h2><p>先维护活动内容，再在小程序模拟器中查看效果。</p></div></div><div class="quick-actions"><button class="quick-action" data-goto="challenges"><span class="quick-symbol orange">✦</span><span><strong>管理挑战</strong><small>创建、编辑和发布挑战</small></span><b>›</b></button><button class="quick-action" data-goto="announcements"><span class="quick-symbol blue">▤</span><span><strong>发布公告</strong><small>更新首页校园公告</small></span><b>›</b></button></div></article>
+          <article class="panel"><div class="panel-heading"><div><h2>本机服务状态</h2><p>开发服务健康检查</p></div><span class="status-pill" id="server-status">检查中</span></div><div class="endpoint-row"><span>Admin API</span><code>127.0.0.1:8790</code></div><div class="endpoint-row"><span>存储</span><code id="storage-label">本地 JSON</code></div><div class="endpoint-row"><span>用户记录同步</span><code>未启用</code></div></article>
+        </div>
+        <article class="panel"><div class="panel-heading"><div><h2>最近操作</h2><p>仅记录本机配置变更</p></div><button class="text-button" data-goto="audit">查看全部 →</button></div><div id="overview-audit" class="audit-list"></div></article>
+      </section>
+
+      <section class="view" id="view-challenges">
+        <div class="page-heading"><div><p class="eyebrow">CHALLENGE MANAGEMENT</p><h1>挑战管理</h1><p class="subtitle">已发布内容可由开启“连接本机 Web Admin”的小程序模拟器读取。</p></div><button class="button button-primary" id="add-challenge">＋ 新建挑战</button></div>
+        <article class="panel table-panel"><div class="table-toolbar"><div><strong>挑战配置</strong><span id="challenge-count-label">0 项</span></div><button class="button button-quiet button-small" id="refresh-challenges">刷新</button></div><div class="table-wrap"><table><thead><tr><th>挑战</th><th>规则 / 目标</th><th>参与人数（演示）</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody id="challenge-rows"></tbody></table></div><div id="challenge-empty" class="empty-state hidden"><span>✦</span><strong>还没有挑战配置</strong><p>创建一项挑战后，可选择发布到小程序模拟器。</p></div></article>
+      </section>
+
+      <section class="view" id="view-announcements">
+        <div class="page-heading"><div><p class="eyebrow">ANNOUNCEMENTS</p><h1>公告管理</h1><p class="subtitle">首页只读取已发布公告。公告为本机演示配置。</p></div><button class="button button-primary" id="add-announcement">＋ 新建公告</button></div>
+        <article class="panel table-panel"><div class="table-toolbar"><div><strong>公告配置</strong><span id="announcement-count-label">0 项</span></div><button class="button button-quiet button-small" id="refresh-announcements">刷新</button></div><div class="table-wrap"><table><thead><tr><th>公告</th><th>内容预览</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody id="announcement-rows"></tbody></table></div><div id="announcement-empty" class="empty-state hidden"><span>▤</span><strong>还没有公告</strong><p>创建公告后可发布到本机小程序模拟器。</p></div></article>
+      </section>
+
+      <section class="view" id="view-audit">
+        <div class="page-heading"><div><p class="eyebrow">LOCAL AUDIT</p><h1>操作记录</h1><p class="subtitle">本地配置修改记录；不包含学生身份、运动记录或轨迹。</p></div><button class="button button-quiet" id="refresh-audit">刷新记录</button></div>
+        <article class="panel"><div id="audit-table" class="audit-list"></div></article>
+      </section>
+      <footer class="page-footer">Campus Pulse · 本地运营演示端 <span>配置数据不会自动上传</span></footer>
+    </main>
+  </div>
+
+  <div id="challenge-dialog" class="editor-dialog" role="dialog" aria-modal="true" aria-labelledby="challenge-dialog-title" aria-hidden="true">
+    <form id="challenge-form">
+      <div class="dialog-heading"><div><p class="eyebrow">CHALLENGE</p><h2 id="challenge-dialog-title">新建挑战</h2></div><button type="button" class="icon-button" data-close="challenge-dialog">×</button></div>
+      <input type="hidden" name="id">
+      <label>挑战名称<input name="title" required maxlength="80" placeholder="例如：七日晨跑计划"></label>
+      <label>挑战说明<input name="subtitle" required maxlength="180" placeholder="对参与者展示的规则简介"></label>
+      <div class="form-row"><label>规则类型<select name="ruleType"><option value="streak">连续运动天数</option><option value="monthlyDistance">本月累计里程</option><option value="weeklyDistance">本周累计里程</option><option value="static">演示活动</option></select></label><label>目标值<input name="target" type="number" min="1" max="10000" step="0.1" required value="10"></label></div>
+      <div class="form-row"><label>每日最低里程（连续挑战）<input name="dailyTargetKm" type="number" min="0.2" max="50" step="0.1" value="2"></label><label>奖励文案<input name="reward" maxlength="60" placeholder="例如：校园探索家"></label></div>
+      <div class="form-row"><label>展示风格<select name="tone"><option value="orange">活力橙</option><option value="blue">校园蓝</option><option value="purple">社团紫</option></select></label><label>周期说明<input name="durationText" maxlength="50" placeholder="例如：本月有效"></label></div>
+      <label>参与人数（演示）<input name="participants" type="number" min="0" max="1000000" value="0"></label>
+      <label class="checkbox-label"><input name="published" type="checkbox" checked> 发布到小程序模拟器</label>
+      <div class="form-error" id="challenge-error"></div>
+      <div class="dialog-actions"><button type="button" class="button button-quiet" data-close="challenge-dialog">取消</button><button type="submit" class="button button-primary">保存挑战</button></div>
+    </form>
+  </div>
+
+  <div id="announcement-dialog" class="editor-dialog" role="dialog" aria-modal="true" aria-labelledby="announcement-dialog-title" aria-hidden="true">
+    <form id="announcement-form">
+      <div class="dialog-heading"><div><p class="eyebrow">ANNOUNCEMENT</p><h2 id="announcement-dialog-title">新建公告</h2></div><button type="button" class="icon-button" data-close="announcement-dialog">×</button></div>
+      <input type="hidden" name="id">
+      <label>公告标题<input name="title" required maxlength="80" placeholder="公告标题"></label>
+      <label>公告正文<textarea name="body" required maxlength="500" rows="5" placeholder="输入要展示在小程序首页的公告"></textarea></label>
+      <label class="checkbox-label"><input name="published" type="checkbox" checked> 发布到小程序模拟器</label>
+      <div class="form-error" id="announcement-error"></div>
+      <div class="dialog-actions"><button type="button" class="button button-quiet" data-close="announcement-dialog">取消</button><button type="submit" class="button button-primary">保存公告</button></div>
+    </form>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/admin.js"></script>
+</body>
+</html>

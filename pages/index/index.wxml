@@ -9,6 +9,7 @@
     <view class="mini-line"><view style="width:{{weekProgress}}%"></view></view>
     <view class="row between"><text class="muted small">距离周目标 {{weeklyGoalKm}} km</text><text class="muted small">{{weekProgress >= 100 ? '目标已完成' : '还差 ' + remainingDistance + ' km'}}</text></view>
   </view>
+  <view wx:if="{{announcement}}" class="announcement-card card"><text class="announcement-label">校园公告</text><text class="announcement-title">{{announcement.title}}</text><text class="announcement-body">{{announcement.body}}</text></view>
   <view class="quick-grid">
     <view class="quick card" bindtap="startRun"><view class="quick-icon coral">▶</view><text>开始运动</text><text class="muted small">记录今天的步伐</text></view>
     <view class="quick card" bindtap="openChallenges"><view class="quick-icon green">✦</view><text>加入挑战</text><text class="muted small">和同学一起坚持</text></view>

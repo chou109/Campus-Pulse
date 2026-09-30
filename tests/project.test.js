@@ -16,11 +16,11 @@ function record(id, date, distance) {
   return { id, createdAt: date.toISOString(), distance, duration: 30, calories: 200, pace: "7'30\"", points: [] }
 }
 
-function loadApp(storageSeed = {}) {
+function loadApp(storageSeed = {}, wxOverrides = {}) {
   const storage = new Map(Object.entries(storageSeed))
   let appConfig
   const modalResponses = []
-  const wx = {
+  const wx = Object.assign({
     getStorageSync: key => storage.get(key),
     setStorageSync: (key, value) => storage.set(key, value),
     removeStorageSync: key => storage.delete(key),
@@ -29,7 +29,7 @@ function loadApp(storageSeed = {}) {
     navigateBack() {}, navigateTo() {}, switchTab() {},
     setClipboardData(options) { if (options.success) options.success() },
     getLocation() {}
-  }
+  }, wxOverrides)
   const context = {
     wx,
     console,
@@ -40,6 +40,7 @@ function loadApp(storageSeed = {}) {
   context.require = request => {
     if (request === './utils/statistics') return stats
     if (request === './utils/challenge-rules') return challengeRules
+    if (request === './utils/default-challenges') return require('../utils/default-challenges')
     if (request.startsWith('../../utils/')) return require(path.join(ROOT, 'utils', path.basename(request)))
     throw new Error(`Unexpected require: ${request}`)
   }
@@ -139,6 +140,25 @@ test('reset restores demo records, settings, and challenges', () => {
   assert.equal(app.globalData.records.length, 4)
   assert.equal(app.globalData.settings.weeklyGoalKm, 10)
   assert.equal(app.globalData.settings.publicRank, true)
+})
+
+test('app can load local admin public config and preserve local enrollment', () => {
+  const { app } = loadApp({}, {
+    request(options) {
+      options.success({ statusCode: 200, data: {
+        challenges: [{ id: '1', title: '后台挑战', subtitle: '测试规则', ruleType: 'weeklyDistance', target: 8, published: true }],
+        announcements: [{ id: 'notice-1', title: '测试公告', body: '仅本机展示', published: true }]
+      } })
+    }
+  })
+  app.globalData.settings.useLocalAdminBackend = true
+  app.globalData.challenges[0].joined = true
+  let connected = false
+  app.fetchPublicAdminConfig(value => { connected = value })
+  assert.equal(connected, true)
+  assert.equal(app.globalData.challenges.length, 1)
+  assert.equal(app.globalData.challenges[0].joined, true)
+  assert.equal(app.globalData.announcements[0].title, '测试公告')
 })
 
 test('weekly goal updates remain constrained by profile options', () => {

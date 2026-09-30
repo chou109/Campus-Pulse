@@ -22,6 +22,10 @@ Page({
     const value = event.detail.value
     app.updateSettings({ [key]: value })
     this.setData({ settings: app.globalData.settings })
+    if (key === 'useLocalAdminBackend' && value) {
+      app.fetchPublicAdminConfig(connected => wx.showToast({ title: connected ? '已同步本机运营配置' : '未连接本机后台，继续使用本地默认数据', icon: 'none' }))
+      return
+    }
     wx.showToast({ title: '设置已保存', icon: 'none' })
   },
 

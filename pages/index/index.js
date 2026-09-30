@@ -31,6 +31,11 @@ Page({
   },
 
   onShow() {
+    this.refreshDashboard()
+    if (app.globalData.settings.useLocalAdminBackend) app.fetchPublicAdminConfig(() => this.refreshDashboard())
+  },
+
+  refreshDashboard() {
     const records = app.globalData.records || []
     const total = stats.sumDistance(records)
     const weekRange = stats.getWeekRange(new Date())
@@ -42,6 +47,7 @@ Page({
     const progress = Math.min(100, Math.round((week / weeklyGoalKm) * 100))
     const change = previousWeek > 0 ? Math.round((week - previousWeek) / previousWeek * 100) : 0
     const changeText = previousWeek > 0 ? `${change >= 0 ? '+' : ''}${change}% 较上周` : '上周暂无记录'
+    const announcement = (app.globalData.announcements || []).find(item => item.published) || null
     const feed = records.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 3).map(item => Object.assign({}, item, {
       visibilityText: app.globalData.settings.shareCheckIn ? '可分享' : '仅自己可见',
       distanceText: formatDistance(item.distance)
@@ -63,6 +69,7 @@ Page({
       hasRecords: records.length > 0,
       showOnboarding: !app.globalData.onboardingSeen,
       shareCheckIn: app.globalData.settings.shareCheckIn,
+      announcement,
       changeText
     })
   },

@@ -6,3 +6,5 @@
 .guide-btn { margin-top:28rpx; border:0; background:#edf0eb; color:#5f7162; border-radius:16rpx; font-size:24rpx; }
 
 .preference-note { font-size:19rpx; line-height:1.5; padding:0 0 18rpx; }
+
+.local-admin-setting { display:flex; flex-direction:column; gap:12rpx; padding:24rpx; line-height:1.55; }

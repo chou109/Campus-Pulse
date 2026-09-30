@@ -18,6 +18,11 @@ Page({
   data: { challenges: [], recommendation: null },
 
   onShow() {
+    this.refreshChallenges()
+    if (app.globalData.settings.useLocalAdminBackend) app.fetchPublicAdminConfig(() => this.refreshChallenges())
+  },
+
+  refreshChallenges() {
     const challenges = decorateChallenges(app.globalData.challenges)
     const recommendation = challengeRules.recommend(app.globalData.challenges, app.globalData.records, app.globalData.streak)
     this.setData({ challenges, recommendation })
