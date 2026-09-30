@@ -29,6 +29,7 @@
 - 榜单：周榜/月榜和本人高亮；
 - 活动：挑战列表、详情、规则、进度、基于规则的本地推荐、加入/退出和邀请分享；
 - 我的：累计统计、勋章墙、运动目标、隐私设置、本地记录删除和反馈草稿；
+- AI 运动复盘测试：通过本机代理调用配置的 OpenAI-compatible 网关；失败时使用本地规则模板。
 - 分享：本地打卡预览和文案复制；当前不上传运动数据；
 - 挑战推荐：基于本地规则生成推荐理由，不调用大模型。
 
@@ -180,7 +181,29 @@ git push -u origin main
 - `project.config.json` 中的 AppID 是否适合公开仓库；
 - README 中的运行说明与当前代码一致。
 
-### 6. 未来正式上线前必须补充
+### 6. 本地 AI 运动复盘测试（可选）
+
+AI 复盘仅在用户打开单条运动记录并主动点击“生成运动复盘”后运行。小程序只提交距离、时长、配速、本周运动次数、周目标和本周汇总里程；不提交轨迹、用户昵称、微信身份、学院或运动记录日期。API Key 只由本机 Node 代理读取，不进入小程序包或 Git。
+
+**安全提醒：** 如果 API Key 曾粘贴到聊天、截图或仓库，请先到服务商控制台撤销并生成新 Key。不要把 Key 粘贴到聊天或写入 `.env.example`。
+
+本机启动方法（macOS zsh）：
+
+```bash
+cd /Users/chou/Documents/Codex/2026-09-29/1-2-3-4-1-api
+read -rs "CAMPUS_PULSE_AI_API_KEY?粘贴新 API Key（输入不回显）: "
+echo
+export CAMPUS_PULSE_AI_API_KEY
+export CAMPUS_PULSE_AI_BASE_URL=https://aigw.wenxiaobai.com/v1
+export CAMPUS_PULSE_AI_MODEL=gpt-5.5
+node dev/ai-proxy.js
+```
+
+保持该终端运行，在微信开发者工具模拟器中编译小程序，打开一条运动记录并点“生成运动复盘”。本机代理默认监听 `127.0.0.1:8788`。另开终端停止代理可按 `Control-C`；关闭终端后环境变量随进程结束，不写入文件。`.env.example` 仅为无凭据配置示例。
+
+该代理只面向当前电脑的开发者工具模拟器；真机不能用手机的 `127.0.0.1` 访问 Mac。正式或真机使用前须另行部署带认证、限流、Secret 管理和 HTTPS 的服务端代理。AI 调用失败、代理未启动或模型返回格式无效时，小程序会自动回退到本地规则模板。
+
+### 7. 未来正式上线前必须补充
 
 如果要从研究原型升级为正式校园系统，需要另行设计和评审：
 
@@ -213,6 +236,8 @@ pages/records/                 运动记录列表
 pages/record-detail/           单条运动记录详情
 pages/challenge-detail/        挑战详情和规则
 pages/feedback/                本地反馈草稿
+services/ai/                   AI 运动复盘小程序客户端
+dev/ai-proxy.js                本机开发代理，不含 API Key
 pages/rank/                    周榜/月榜
 pages/challenges/              活动挑战
 pages/profile/                 个人中心、勋章和隐私设置

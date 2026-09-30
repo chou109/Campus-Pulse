@@ -1,4 +1,5 @@
 const app = getApp()
+const workoutReview = require('../../services/ai/workout-review')
 
 function formatDate(value) {
   const date = new Date(value)
@@ -24,7 +25,11 @@ Page({
     polyline: [],
     markers: [],
     shareEnabled: true,
-    checkInText: ''
+    checkInText: '',
+    aiLoading: false,
+    aiReview: null,
+    aiSourceText: '',
+    aiRequestError: ''
   },
 
   onLoad(options) {
@@ -46,6 +51,22 @@ Page({
 
   onShow() {
     this.setData({ shareEnabled: Boolean(app.globalData.settings.shareCheckIn) })
+  },
+
+  generateAiReview() {
+    if (!this.data.record || this.data.aiLoading) return
+    this.setData({ aiLoading: true, aiRequestError: '' })
+    workoutReview.generateWorkoutReview(this.data.record, app.globalData.records || [], app.globalData.settings.weeklyGoalKm)
+      .then(result => {
+        this.setData({
+          aiLoading: false,
+          aiReview: result.review,
+          aiSourceText: result.source === 'ai' ? 'AI 生成' : '本地规则模板（代理未连接或请求失败）'
+        })
+      })
+      .catch(() => {
+        this.setData({ aiLoading: false, aiRequestError: '暂时无法生成复盘，请稍后重试。' })
+      })
   },
 
   onShareAppMessage() {

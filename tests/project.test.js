@@ -65,6 +65,7 @@ function loadPage(relativePath, app, wxOverrides = {}) {
     Page: config => { page = config },
     require: request => {
       if (request.startsWith('../../utils/')) return require(path.join(ROOT, 'utils', path.basename(request)))
+      if (request === '../../services/ai/workout-review') return require(path.join(ROOT, 'services/ai/workout-review'))
       throw new Error(`Unexpected require: ${request}`)
     }
   }
@@ -336,4 +337,125 @@ test('feedback draft is local, reloadable, copyable, and clearable', () => {
   assert.equal(copied, '活动页面很好用')
   page.clearDraft()
   assert.equal(storage.has('campus-fit-feedback-draft'), false)
+})
+
+test('AI proxy sanitizes input and forwards only aggregate workout data', async t => {
+  const http = require('node:http')
+  const { createProxyServer } = require('../dev/ai-proxy')
+  let observedHeaders = null
+  let observedRequest = null
+  const upstream = http.createServer(async (request, response) => {
+    observedHeaders = request.headers
+    let raw = ''
+    for await (const chunk of request) raw += chunk
+    observedRequest = JSON.parse(raw)
+    const content = JSON.stringify({
+      summary: '完成一段平稳运动。',
+      positive_feedback: '你正稳步积累。',
+      next_action: '按舒适节奏继续。',
+      safety_note: '如有不适请停止。'
+    })
+    response.writeHead(200, { 'content-type': 'application/json' })
+    response.end(JSON.stringify({ model: 'test-model', choices: [{ message: { content } }] }))
+  })
+  await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve))
+  t.after(() => new Promise(resolve => upstream.close(resolve)))
+
+  const upstreamAddress = upstream.address()
+  const proxy = createProxyServer({
+    apiKey: 'unit-test-only',
+    model: 'test-model',
+    baseUrl: `http://127.0.0.1:${upstreamAddress.port}/v1`
+  })
+  await new Promise(resolve => proxy.listen(0, '127.0.0.1', resolve))
+  t.after(() => new Promise(resolve => proxy.close(resolve)))
+
+  const proxyAddress = proxy.address()
+  const response = await fetch(`http://127.0.0.1:${proxyAddress.port}/api/ai/workout-review`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      distance_km: 3.1,
+      duration_minutes: 27,
+      pace: "8'42\"",
+      recent_sessions: 2,
+      weekly_goal_km: 10,
+      weekly_completed_km: 6.5,
+      nickname: 'must-not-forward',
+      route_points: [{ latitude: 31.2, longitude: 121.4 }]
+    })
+  })
+  const result = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(result.review.summary, '完成一段平稳运动。')
+  assert.equal(observedHeaders.authorization, 'Bearer unit-test-only')
+  assert.equal(observedRequest.model, 'test-model')
+  assert.equal(observedRequest.messages[1].content.includes('must-not-forward'), false)
+  assert.equal(observedRequest.messages[1].content.includes('route_points'), false)
+})
+
+test('AI proxy rejects invalid fields and clearly reports missing server key', async t => {
+  const http = require('node:http')
+  const { createProxyServer } = require('../dev/ai-proxy')
+  const proxy = createProxyServer({ apiKey: '', baseUrl: 'https://aigw.wenxiaobai.com/v1' })
+  await new Promise(resolve => proxy.listen(0, '127.0.0.1', resolve))
+  t.after(() => new Promise(resolve => proxy.close(resolve)))
+  const address = proxy.address()
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/ai/workout-review`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  })
+  assert.equal(response.status, 503)
+  assert.match((await response.json()).error, /missing server configuration/)
+})
+
+test('AI client sends only aggregate fields and falls back when the local proxy is unavailable', async () => {
+  const sent = []
+  const context = {
+    module: { exports: {} },
+    exports: {},
+    require: () => stats,
+    wx: {
+      request(options) {
+        sent.push(options)
+        options.fail({ errMsg: 'request:fail' })
+      }
+    }
+  }
+  vm.createContext(context)
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'services/ai/workout-review.js'), 'utf8'), context)
+  const service = context.module.exports
+  const workout = Object.assign(record('ai-test', localDate(30), 3.1), { points: [{ latitude: 31.2, longitude: 121.4 }] })
+  const result = await service.generateWorkoutReview(workout, [workout], 10)
+  assert.equal(result.source, 'local-fallback')
+  assert.equal(sent.length, 1)
+  assert.deepEqual(Object.keys(sent[0].data).sort(), ['distance_km', 'duration_minutes', 'pace', 'recent_sessions', 'weekly_completed_km', 'weekly_goal_km'].sort())
+  assert.equal(Object.hasOwn(sent[0].data, 'points'), false)
+})
+
+test('AI client accepts a valid structured proxy response', async () => {
+  let sentData
+  const expectedReview = {
+    summary: '完成 3.1 公里。',
+    positive_feedback: '你在稳定积累。',
+    next_action: '按舒适节奏安排下一次运动。',
+    safety_note: '如有不适请停止。'
+  }
+  const context = {
+    module: { exports: {} },
+    exports: {},
+    require: () => stats,
+    wx: {
+      request(options) {
+        sentData = options.data
+        options.success({ statusCode: 200, data: { review: expectedReview } })
+      }
+    }
+  }
+  vm.createContext(context)
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'services/ai/workout-review.js'), 'utf8'), context)
+  const service = context.module.exports
+  const result = await service.generateWorkoutReview(record('ai-success', localDate(30), 3.1), [], 10)
+  assert.equal(result.source, 'ai')
+  assert.deepEqual(result.review, expectedReview)
+  assert.equal(sentData.distance_km, 3.1)
 })
