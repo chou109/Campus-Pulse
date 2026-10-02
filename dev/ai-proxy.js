@@ -4,15 +4,15 @@ const { URL } = require('node:url')
 const MAX_BODY_BYTES = 8192
 const MAX_OUTPUT_TOKENS = 320
 const ALLOWED_REVIEW_FIELDS = ['summary', 'positive_feedback', 'next_action', 'safety_note']
+const ALLOWED_ORIGIN_HOSTS = new Set(['127.0.0.1', 'localhost'])
+const MAX_REQUESTS_PER_WINDOW = 5
+const RATE_LIMIT_WINDOW_MS = 60000
 
 function jsonResponse(response, status, body) {
   const payload = JSON.stringify(body)
   response.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
-    'content-length': Buffer.byteLength(payload),
-    'access-control-allow-origin': '*',
-    'access-control-allow-methods': 'POST, OPTIONS, GET',
-    'access-control-allow-headers': 'content-type'
+    'content-length': Buffer.byteLength(payload)
   })
   response.end(payload)
 }
@@ -72,6 +72,16 @@ function parseReviewContent(content) {
   return result
 }
 
+function isAllowedOrigin(origin) {
+  if (origin === undefined) return true
+  try {
+    const url = new URL(origin)
+    return ['http:', 'https:'].includes(url.protocol)
+      && ALLOWED_ORIGIN_HOSTS.has(url.hostname)
+      && url.origin === origin
+  } catch (_) { return false }
+}
+
 function createProxyServer(options = {}) {
   const apiKey = options.apiKey || process.env.CAMPUS_PULSE_AI_API_KEY || ''
   const model = options.model || process.env.CAMPUS_PULSE_AI_MODEL || 'gpt-5.5'
@@ -81,8 +91,17 @@ function createProxyServer(options = {}) {
   const isLoopback = base.hostname === '127.0.0.1' || base.hostname === 'localhost'
   if (base.protocol !== 'https:' && !(isLoopback && base.protocol === 'http:')) throw new Error('AI base URL must use HTTPS (HTTP is allowed only for localhost tests)')
 
+  const startedAt = []
+  let inFlight = false
   return http.createServer(async (request, response) => {
-    response.setHeader('access-control-allow-origin', '*')
+    const origin = request.headers.origin
+    const host = String(request.headers.host || '').toLowerCase()
+    const port = request.socket.localPort
+    response.setHeader('vary', 'Origin')
+    if (![ `127.0.0.1:${port}`, `localhost:${port}` ].includes(host) || !isAllowedOrigin(origin)) {
+      return jsonResponse(response, 403, { error: 'Origin or Host not allowed by local AI proxy' })
+    }
+    if (origin) response.setHeader('access-control-allow-origin', origin)
     response.setHeader('access-control-allow-methods', 'POST, OPTIONS, GET')
     response.setHeader('access-control-allow-headers', 'content-type')
     if (request.method === 'OPTIONS') return jsonResponse(response, 204, {})
@@ -98,6 +117,15 @@ function createProxyServer(options = {}) {
     try { workout = sanitizeWorkoutInput(await readJson(request)) } catch (error) {
       return jsonResponse(response, error.statusCode || 400, { error: error.statusCode === 413 ? 'Request too large' : 'Invalid workout input' })
     }
+
+    const now = Date.now()
+    while (startedAt.length && now - startedAt[0] >= RATE_LIMIT_WINDOW_MS) startedAt.shift()
+    if (inFlight || startedAt.length >= MAX_REQUESTS_PER_WINDOW) {
+      response.setHeader('retry-after', String(inFlight ? 1 : Math.max(1, Math.ceil((startedAt[0] + RATE_LIMIT_WINDOW_MS - now) / 1000))))
+      return jsonResponse(response, 429, { error: 'Local AI proxy request limit reached' })
+    }
+    startedAt.push(now)
+    inFlight = true
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 25000)
@@ -132,6 +160,7 @@ function createProxyServer(options = {}) {
       return jsonResponse(response, 502, { error: error && error.name === 'AbortError' ? 'AI provider timed out' : 'AI provider response could not be processed' })
     } finally {
       clearTimeout(timeout)
+      inFlight = false
     }
   })
 }

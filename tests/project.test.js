@@ -31,6 +31,7 @@ function loadApp(storageSeed = {}, wxOverrides = {}) {
     getLocation() {}
   }, wxOverrides)
   const context = {
+    Date,
     wx,
     console,
     App: config => { appConfig = config },
@@ -60,6 +61,7 @@ function loadPage(relativePath, app, wxOverrides = {}) {
     getLocation() {}
   }, wxOverrides)
   const context = {
+    Date,
     wx,
     console,
     getApp: () => app,
@@ -161,6 +163,22 @@ test('app can load local admin public config and preserve local enrollment', () 
   assert.equal(app.globalData.announcements[0].title, '测试公告')
 })
 
+test('failed local Admin sync keeps the last saved config rather than clearing it', () => {
+  const savedChallenge = { id: 'cached', title: '缓存挑战', subtitle: '仅本地缓存', ruleType: 'weeklyDistance', target: 8, joined: true }
+  const savedAnnouncement = { id: 'cached-notice', title: '缓存公告', body: '仅本地缓存', published: true }
+  const { app } = loadApp({
+    'campus-fit-challenges': [savedChallenge],
+    'campus-fit-announcements': [savedAnnouncement],
+    'campus-fit-settings': { useLocalAdminBackend: true }
+  }, {
+    request(options) { options.fail({ errMsg: 'request:fail' }) }
+  })
+  let connected
+  app.fetchPublicAdminConfig(value => { connected = value })
+  assert.equal(connected, false)
+  assert.equal(app.globalData.challenges[0].id, 'cached')
+  assert.equal(app.globalData.announcements[0].id, 'cached-notice')
+})
 test('weekly goal updates remain constrained by profile options', () => {
   const { app } = loadApp()
   const { page } = loadPage('pages/profile/profile.js', app)
@@ -234,10 +252,13 @@ test('project page registry contains each page file', () => {
     assert.ok(fs.existsSync(path.join(ROOT, `${page}.js`)), `${page}.js missing`)
     assert.ok(fs.existsSync(path.join(ROOT, `${page}.wxml`)), `${page}.wxml missing`)
     assert.ok(fs.existsSync(path.join(ROOT, `${page}.wxss`)), `${page}.wxss missing`)
+    assert.ok(fs.existsSync(path.join(ROOT, `${page}.json`)), `${page}.json missing`)
+    assert.doesNotThrow(() => JSON.parse(fs.readFileSync(path.join(ROOT, `${page}.json`), 'utf8')), `${page}.json invalid`)
   }
 })
 
-test('home aggregates current week and month and switches trend datasets', () => {
+test('home aggregates current week and month and switches trend datasets', t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date(2026, 8, 30, 12) })
   const { app } = loadApp()
   app.globalData.records = [record('today', localDate(30), 2.5), record('old', new Date(2026, 7, 31), 4)]
   app.globalData.settings.weeklyGoalKm = 5
@@ -250,6 +271,41 @@ test('home aggregates current week and month and switches trend datasets', () =>
   page.selectTrend({ currentTarget: { dataset: { mode: 'month' } } })
   assert.equal(page.data.trendTitle, '本月趋势')
   assert.equal(page.data.trendTotal, '2.5')
+})
+
+
+for (const scenario of [
+  { name: 'month rollover', now: new Date(2026, 9, 1, 12), dates: [new Date(2026, 8, 30, 8), new Date(2026, 9, 1, 8)], week: '5.0', month: '3.0' },
+  { name: 'Monday week rollover', now: new Date(2026, 9, 5, 12), dates: [new Date(2026, 9, 4, 8), new Date(2026, 9, 5, 8)], week: '3.0', month: '5.0' },
+  { name: 'year rollover', now: new Date(2027, 0, 1, 12), dates: [new Date(2026, 11, 31, 8), new Date(2027, 0, 1, 8)], week: '5.0', month: '3.0' }
+]) {
+  test('home statistics remain correct at ' + scenario.name, t => {
+    t.mock.timers.enable({ apis: ['Date'], now: scenario.now })
+    const { app } = loadApp()
+    app.globalData.records = scenario.dates.map((date, index) => record('boundary-' + index, date, index + 2))
+    const { page } = loadPage('pages/index/index.js', app)
+    page.onShow()
+    assert.equal(page.data.weeklyDistance, scenario.week)
+    assert.equal(page.data.monthlyDistance, scenario.month)
+    assert.equal(page.data.trendTotal, scenario.week)
+    page.selectTrend({ currentTarget: { dataset: { mode: 'month' } } })
+    assert.equal(page.data.trendTotal, scenario.month)
+  })
+}
+
+test('home handles empty records at a fixed month boundary', t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date(2026, 9, 1) })
+  const { app } = loadApp()
+  app.globalData.records = []
+  const { page } = loadPage('pages/index/index.js', app)
+  page.onShow()
+  assert.equal(page.data.weeklyDistance, '0.0')
+  assert.equal(page.data.monthlyDistance, '0.0')
+  assert.equal(page.data.weekProgress, 0)
+  assert.equal(page.data.hasRecords, false)
+  assert.equal(page.data.trendEmpty, true)
+  page.selectTrend({ currentTarget: { dataset: { mode: 'month' } } })
+  assert.equal(page.data.trendEmpty, true)
 })
 
 test('profile privacy settings persist and refresh derived state', () => {
